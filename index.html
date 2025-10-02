@@ -4,221 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Очередь в классе</title>
-    <!-- Firebase SDK через <script> теги -->
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 100%;
-            margin: 0;
-            padding: 10px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            color: #4a5568;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            color: #805ad5;
-            margin-bottom: 20px;
-            font-size: 2.5em;
-            font-weight: 300;
-            position: relative;
-        }
-        .queue-section {
-            background: white;
-            margin: 15px 0;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(128, 90, 213, 0.1);
-        }
-        .queue-section:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-        .queue-section h2 {
-            color: #805ad5;
-            margin-bottom: 15px;
-            font-size: 1.4em;
-            text-align: center;
-            font-weight: 400;
-            position: relative;
-        }
-        #toiletQueueSection h2::before {
-            content: '🚽';
-            margin-right: 10px;
-            display: inline-block;
-        }
-        #boardQueueSection h2::before {
-            content: '📋';
-            margin-right: 10px;
-            display: inline-block;
-        }
-        .add-form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-            align-items: center;
-        }
-        #nameInput {
-            flex: 1;
-            min-width: 150px;
-            padding: 12px 15px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: #fafafa;
-        }
-        #nameInput:focus {
-            outline: none;
-            border-color: #805ad5;
-            box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1);
-            background: white;
-        }
-        .select-queue {
-            padding: 12px 15px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 16px;
-            background: #fafafa;
-            transition: all 0.3s ease;
-        }
-        .select-queue:focus {
-            outline: none;
-            border-color: #805ad5;
-            box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1);
-        }
-        button {
-            padding: 12px 20px;
-            background: linear-gradient(135deg, #805ad5 0%, #9f7aea 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            min-width: 100px;
-        }
-        button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(128, 90, 213, 0.2);
-        }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .queue-list {
-            list-style: none;
-            padding: 0;
-        }
-        .queue-list li {
-            background: #f7fafc;
-            margin: 8px 0;
-            padding: 15px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            animation: fadeIn 0.5s ease forwards;
-            opacity: 0;
-            transform: scale(0.95);
-            border-left: 3px solid #805ad5;
-            transition: all 0.3s ease;
-        }
-        .queue-list li:nth-child(even) {
-            background: #edf2f7;
-        }
-        .queue-list li:hover {
-            transform: scale(1.01);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        .queue-item-number {
-            font-weight: 600;
-            color: #805ad5;
-            font-size: 1.1em;
-        }
-        .queue-item-name {
-            flex: 1;
-            margin-left: 10px;
-        }
-        .remove-btn {
-            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-            color: white;
-            padding: 8px 12px;
-            font-size: 14px;
-            min-width: auto;
-            border-radius: 6px;
-        }
-        .remove-btn:hover {
-            box-shadow: 0 3px 10px rgba(245, 101, 101, 0.2);
-        }
-        .status {
-            text-align: center;
-            margin: 10px 0;
-            color: #805ad5;
-            font-style: italic;
-        }
-        /* Responsive Design */
-        @media (max-width: 600px) {
-            body {
-                padding: 5px;
-            }
-            h1 {
-                font-size: 2em;
-            }
-            .add-form {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            #nameInput, .select-queue, button {
-                width: 100%;
-            }
-            .queue-section {
-                padding: 15px;
-                margin: 10px 0;
-            }
-            .queue-list li {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            .queue-item-name {
-                margin-left: 0;
-            }
-        }
-        @media (min-width: 601px) {
-            .add-form {
-                max-width: 500px;
-                margin: 0 auto;
-            }
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 100%; margin: 0; padding: 10px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; color: #4a5568; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; color: #805ad5; margin-bottom: 20px; font-size: 2.5em; font-weight: 300; }
+        .queue-section { background: white; margin: 15px 0; padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: all 0.3s ease; border: 1px solid rgba(128, 90, 213, 0.1); }
+        .queue-section:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .queue-section h2 { color: #805ad5; margin-bottom: 15px; font-size: 1.4em; text-align: center; font-weight: 400; }
+        #toiletQueueSection h2::before { content: '🚽 '; }
+        #boardQueueSection h2::before { content: '📋 '; }
+        .add-form { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; }
+        #nameInput { flex: 1; min-width: 150px; padding: 12px 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; transition: all 0.3s ease; background: #fafafa; }
+        #nameInput:focus { outline: none; border-color: #805ad5; box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1); background: white; }
+        .select-queue { padding: 12px 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; background: #fafafa; transition: all 0.3s ease; }
+        .select-queue:focus { outline: none; border-color: #805ad5; box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1); }
+        button { padding: 12px 20px; background: linear-gradient(135deg, #805ad5 0%, #9f7aea 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.3s ease; min-width: 100px; }
+        button:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(128, 90, 213, 0.2); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .queue-list { list-style: none; padding: 0; }
+        .queue-list li { background: #f7fafc; margin: 8px 0; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.5s ease forwards; opacity: 0; transform: scale(0.95); border-left: 3px solid #805ad5; transition: all 0.3s ease; }
+        .queue-list li:nth-child(even) { background: #edf2f7; }
+        .queue-list li:hover { transform: scale(1.01); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        @keyframes fadeIn { to { opacity: 1; transform: scale(1); } }
+        .queue-item-number { font-weight: 600; color: #805ad5; font-size: 1.1em; }
+        .queue-item-name { flex: 1; margin-left: 10px; }
+        .remove-btn { background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); color: white; padding: 8px 12px; font-size: 14px; min-width: auto; border-radius: 6px; }
+        .remove-btn:hover { box-shadow: 0 3px 10px rgba(245, 101, 101, 0.2); }
+        .status { text-align: center; margin: 10px 0; color: #805ad5; font-style: italic; }
+        @media (max-width: 600px) { body { padding: 5px; } h1 { font-size: 2em; } .add-form { flex-direction: column; align-items: stretch; } #nameInput, .select-queue, button { width: 100%; } .queue-section { padding: 15px; margin: 10px 0; } .queue-list li { flex-direction: column; align-items: flex-start; gap: 10px; } .queue-item-name { margin-left: 0; } }
+        @media (min-width: 601px) { .add-form { max-width: 500px; margin: 0 auto; } }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Очередь в классе</h1>
-        
         <div class="queue-section">
             <h2>Добавить в очередь</h2>
             <div class="add-form">
@@ -231,20 +53,16 @@
             </div>
             <div id="status" class="status"></div>
         </div>
-
         <div id="toiletQueueSection" class="queue-section">
             <h2>Очередь в туалет</h2>
             <ul id="toiletQueue" class="queue-list"></ul>
         </div>
-
         <div id="boardQueueSection" class="queue-section">
             <h2>Очередь к доске</h2>
             <ul id="boardQueue" class="queue-list"></ul>
         </div>
     </div>
-
     <script>
-        // Твой Firebase config с добавленным databaseURL (из ошибки)
         const firebaseConfig = {
             apiKey: "AIzaSyAezFsKLHF2xUIqW2QZ4wRJtJ7vBaPy8TU",
             authDomain: "classqueue-39608.firebaseapp.com",
@@ -252,25 +70,19 @@
             projectId: "classqueue-39608",
             storageBucket: "classqueue-39608.firebasestorage.app",
             messagingSenderId: "777467342575",
-            appId: "1:777467342575:web:74f2654c4905d08798351a",
-            measurementId: "G-ZEV0MP8VPW"
+            appId: "1:777467342575:web:8852d7ecf781116698351a",
+            measurementId: "G-Q05Z2EH3KM"
         };
-
-        // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-
         const nameInput = document.getElementById('nameInput');
         const queueSelect = document.getElementById('queueSelect');
         const addToQueueBtn = document.getElementById('addToQueueBtn');
         const toiletQueueList = document.getElementById('toiletQueue');
         const boardQueueList = document.getElementById('boardQueue');
         const statusDiv = document.getElementById('status');
-
         let toiletQueueRef = database.ref('toiletQueue');
         let boardQueueRef = database.ref('boardQueue');
-
-        // Функция для обновления списка очереди
         function updateQueueList(queueSnapshot, listElement) {
             listElement.innerHTML = '';
             queueSnapshot.forEach((childSnapshot, index) => {
@@ -278,34 +90,15 @@
                 const key = childSnapshot.key;
                 const li = document.createElement('li');
                 li.style.animationDelay = `${index * 0.1}s`;
-                li.innerHTML = `
-                    <span class="queue-item-number">${index + 1}.</span>
-                    <span class="queue-item-name">${name}</span>
-                    <button class="remove-btn" onclick="removeFromQueue('${listElement.id}', '${key}')">Убрать</button>
-                `;
+                li.innerHTML = `<span class="queue-item-number">${index + 1}.</span> <span class="queue-item-name">${name}</span> <button class="remove-btn" onclick="removeFromQueue('${listElement.id}', '${key}')">Убрать</button>`;
                 listElement.appendChild(li);
             });
         }
-
-        // Функция для удаления из очереди
         window.removeFromQueue = function(listId, key) {
-            if (listId === 'toiletQueue') {
-                toiletQueueRef.child(key).remove();
-            } else if (listId === 'boardQueue') {
-                boardQueueRef.child(key).remove();
-            }
+            if (listId === 'toiletQueue') { toiletQueueRef.child(key).remove(); } else if (listId === 'boardQueue') { boardQueueRef.child(key).remove(); }
         };
-
-        // Слушатели изменений в реальном времени
-        toiletQueueRef.on('value', (snapshot) => {
-            updateQueueList(snapshot, toiletQueueList);
-        });
-
-        boardQueueRef.on('value', (snapshot) => {
-            updateQueueList(snapshot, boardQueueList);
-        });
-
-        // Добавление в очередь
+        toiletQueueRef.on('value', (snapshot) => { updateQueueList(snapshot, toiletQueueList); });
+        boardQueueRef.on('value', (snapshot) => { updateQueueList(snapshot, boardQueueList); });
         addToQueueBtn.addEventListener('click', () => {
             const name = nameInput.value.trim();
             if (name) {
@@ -315,9 +108,7 @@
                 const queueRef = selectedQueue === 'toilet' ? toiletQueueRef : boardQueueRef;
                 queueRef.push(name).then(() => {
                     statusDiv.textContent = 'Добавлено!';
-                    setTimeout(() => {
-                        statusDiv.textContent = '';
-                    }, 2000);
+                    setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     nameInput.value = '';
                     nameInput.focus();
                 }).catch((error) => {
@@ -327,13 +118,7 @@
                 });
             }
         });
-
-        // Поддержка Enter
-        nameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addToQueueBtn.click();
-            }
-        });
+        nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { addToQueueBtn.click(); } });
     </script>
 </body>
 </html>
