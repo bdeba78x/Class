@@ -33,6 +33,7 @@
         .queue-item-name { flex: 1; margin-left: 10px; }
         .remove-btn { background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); color: white; padding: 8px 12px; font-size: 14px; min-width: auto; border-radius: 6px; }
         .remove-btn:hover { box-shadow: 0 3px 10px rgba(245, 101, 101, 0.2); }
+        .remove-btn:disabled { background: #ccc; cursor: not-allowed; }
         .status { text-align: center; margin: 10px 0; color: #805ad5; font-style: italic; }
         @media (max-width: 600px) { body { padding: 5px; } h1 { font-size: 2em; } .add-form { flex-direction: column; align-items: stretch; } #nameInput, .select-queue, button { width: 100%; } .queue-section { padding: 15px; margin: 10px 0; } .queue-list li { flex-direction: column; align-items: flex-start; gap: 10px; } .queue-item-name { margin-left: 0; } }
         @media (min-width: 601px) { .add-form { max-width: 500px; margin: 0 auto; } }
@@ -81,32 +82,90 @@
         const toiletQueueList = document.getElementById('toiletQueue');
         const boardQueueList = document.getElementById('boardQueue');
         const statusDiv = document.getElementById('status');
+
+        // Уникальный ID пользователя для localStorage
+        let userId = localStorage.getItem('userId');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', userId);
+        }
+
         let toiletQueueRef = database.ref('toiletQueue');
         let boardQueueRef = database.ref('boardQueue');
+
+        // Функция для проверки, есть ли имя уже в очереди
+        function hasDuplicateName(queueRef, name) {
+            return new Promise((resolve) => {
+                queueRef.once('value', (snapshot) => {
+                    let hasDup = false;
+                    snapshot.forEach((child) => {
+                        if (child.val().name === name) {
+                            hasDup = true;
+                        }
+                    });
+                    resolve(hasDup);
+                });
+            });
+        }
+
+        // Функция для обновления списка очереди
         function updateQueueList(queueSnapshot, listElement) {
             listElement.innerHTML = '';
-            queueSnapshot.forEach((childSnapshot, index) => {
-                const name = childSnapshot.val();
+            let index = 0;
+            queueSnapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
                 const key = childSnapshot.key;
+                const num = ++index;  // Правильная нумерация от 1
                 const li = document.createElement('li');
-                li.style.animationDelay = `${index * 0.1}s`;
-                li.innerHTML = `<span class="queue-item-number">${index + 1}.</span> <span class="queue-item-name">${name}</span> <button class="remove-btn" onclick="removeFromQueue('${listElement.id}', '${key}')">Убрать</button>`;
+                li.innerHTML = `<span class="queue-item-number">${num}.</span> <span class="queue-item-name">${data.name}</span>`;
+                const btn = document.createElement('button');
+                btn.className = 'remove-btn';
+                btn.textContent = 'Убрать';
+                if (data.userId === userId) {
+                    btn.onclick = () => removeFromQueue(listElement.id, key);
+                } else {
+                    btn.disabled = true;
+                    btn.title = 'Не ваш вход';
+                }
+                li.appendChild(btn);
+                li.style.animationDelay = `${(index - 1) * 0.1}s`;
                 listElement.appendChild(li);
             });
         }
+
+        // Функция для удаления из очереди
         window.removeFromQueue = function(listId, key) {
-            if (listId === 'toiletQueue') { toiletQueueRef.child(key).remove(); } else if (listId === 'boardQueue') { boardQueueRef.child(key).remove(); }
+            if (listId === 'toiletQueue') {
+                toiletQueueRef.child(key).remove();
+            } else if (listId === 'boardQueue') {
+                boardQueueRef.child(key).remove();
+            }
         };
-        toiletQueueRef.on('value', (snapshot) => { updateQueueList(snapshot, toiletQueueList); });
-        boardQueueRef.on('value', (snapshot) => { updateQueueList(snapshot, boardQueueList); });
-        addToQueueBtn.addEventListener('click', () => {
+
+        // Слушатели изменений в реальном времени
+        toiletQueueRef.on('value', (snapshot) => {
+            updateQueueList(snapshot, toiletQueueList);
+        });
+        boardQueueRef.on('value', (snapshot) => {
+            updateQueueList(snapshot, boardQueueList);
+        });
+
+        // Добавление в очередь
+        addToQueueBtn.addEventListener('click', async () => {
             const name = nameInput.value.trim();
             if (name) {
-                addToQueueBtn.disabled = true;
-                statusDiv.textContent = 'Добавление...';
                 const selectedQueue = queueSelect.value;
                 const queueRef = selectedQueue === 'toilet' ? toiletQueueRef : boardQueueRef;
-                queueRef.push(name).then(() => {
+                const hasDup = await hasDuplicateName(queueRef, name);
+                if (hasDup) {
+                    statusDiv.textContent = 'Вы уже в этой очереди!';
+                    setTimeout(() => { statusDiv.textContent = ''; }, 2000);
+                    return;
+                }
+                addToQueueBtn.disabled = true;
+                statusDiv.textContent = 'Добавление...';
+                const entry = { name: name, userId: userId, timestamp: Date.now() };
+                queueRef.push(entry).then(() => {
                     statusDiv.textContent = 'Добавлено!';
                     setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     nameInput.value = '';
@@ -118,7 +177,13 @@
                 });
             }
         });
-        nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { addToQueueBtn.click(); } });
+
+        // Поддержка Enter
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addToQueueBtn.click();
+            }
+        });
     </script>
 </body>
 </html>
