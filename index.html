@@ -31,18 +31,6 @@
             font-weight: 300;
             position: relative;
         }
-        h1::after {
-            content: '🌸';
-            position: absolute;
-            right: 20px;
-            top: 0;
-            font-size: 1.5em;
-            animation: gentleFloat 3s ease-in-out infinite;
-        }
-        @keyframes gentleFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-        }
         .queue-section {
             background: white;
             margin: 15px 0;
@@ -64,13 +52,15 @@
             font-weight: 400;
             position: relative;
         }
-        .queue-section h2::before {
+        #toiletQueueSection h2::before {
             content: '🚽';
             margin-right: 10px;
             display: inline-block;
         }
         #boardQueueSection h2::before {
             content: '📋';
+            margin-right: 10px;
+            display: inline-block;
         }
         .add-form {
             display: flex;
@@ -201,10 +191,6 @@
             }
             .queue-item-name {
                 margin-left: 0;
-            }
-            h1::after {
-                right: 10px;
-                font-size: 1.2em;
             }
         }
         @media (min-width: 601px) {
