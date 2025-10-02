@@ -8,10 +8,32 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 100%; margin: 0; padding: 10px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; color: #4a5568; }
-        .container { max-width: 800px; margin: 0 auto; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            max-width: 100%; 
+            margin: 0; 
+            padding: 10px; 
+            background-image: url('hgfghjkl;.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh; 
+            color: #4a5568; 
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(245, 247, 250, 0.8) 0%, rgba(195, 207, 226, 0.8) 100%);
+            z-index: -1;
+        }
+        .container { max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
         h1 { text-align: center; color: #805ad5; margin-bottom: 20px; font-size: 2.5em; font-weight: 300; }
-        .queue-section { background: white; margin: 15px 0; padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: all 0.3s ease; border: 1px solid rgba(128, 90, 213, 0.1); }
+        .queue-section { background: rgba(255, 255, 255, 0.95); margin: 15px 0; padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: all 0.3s ease; border: 1px solid rgba(128, 90, 213, 0.1); }
         .queue-section:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
         .queue-section h2 { color: #805ad5; margin-bottom: 15px; font-size: 1.4em; text-align: center; font-weight: 400; }
         #toiletQueueSection h2::before { content: '🚽 '; }
@@ -93,7 +115,7 @@
         const boardQueueList = document.getElementById('boardQueue');
         const statusDiv = document.getElementById('status');
 
-       
+        // Уникальный ID пользователя для localStorage
         let userId = localStorage.getItem('userId');
         if (!userId) {
             userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -103,7 +125,7 @@
         let toiletQueueRef = database.ref('toiletQueue');
         let boardQueueRef = database.ref('boardQueue');
 
-       
+        // Тексты на двух языках
         const translations = {
             ru: {
                 title: 'Очередь в классе',
@@ -141,7 +163,7 @@
 
         let currentLang = localStorage.getItem('lang') || 'ru';
 
-       
+        // Функция для смены языка
         function setLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('lang', lang);
@@ -154,19 +176,19 @@
             document.getElementById('addToQueueBtn').textContent = translations[lang].addButton;
             document.querySelector('#toiletQueueSection h2').textContent = translations[lang].toiletQueueTitle;
             document.querySelector('#boardQueueSection h2').textContent = translations[lang].boardQueueTitle;
-            
+            // Обновить кнопки в очередях (после обновления списка)
         }
 
-        
+        // Инициализация языка
         setLanguage(currentLang);
 
-        
+        // Смена языка
         document.getElementById('langSelect').value = currentLang;
         document.getElementById('langSelect').addEventListener('change', (e) => {
             setLanguage(e.target.value);
         });
 
-        
+        // Функция для проверки, есть ли запись от этого userId уже в очереди
         function hasUserInQueue(queueRef) {
             return new Promise((resolve) => {
                 queueRef.once('value', (snapshot) => {
@@ -181,14 +203,14 @@
             });
         }
 
-        
+        // Функция для обновления списка очереди
         function updateQueueList(queueSnapshot, listElement) {
             listElement.innerHTML = '';
             let index = 0;
             queueSnapshot.forEach((childSnapshot) => {
                 const data = childSnapshot.val();
                 const key = childSnapshot.key;
-                const num = ++index;  
+                const num = ++index;  // Правильная нумерация от 1
                 const li = document.createElement('li');
                 li.innerHTML = `<span class="queue-item-number">${num}.</span> <span class="queue-item-name">${data.name}</span>`;
                 const btn = document.createElement('button');
@@ -206,7 +228,7 @@
             });
         }
 
-        
+        // Функция для удаления из очереди
         window.removeFromQueue = function(listId, key) {
             if (listId === 'toiletQueue') {
                 toiletQueueRef.child(key).remove();
@@ -215,7 +237,7 @@
             }
         };
 
-        
+        // Слушатели изменений в реальном времени
         toiletQueueRef.on('value', (snapshot) => {
             updateQueueList(snapshot, toiletQueueList);
         });
@@ -223,7 +245,7 @@
             updateQueueList(snapshot, boardQueueList);
         });
 
-        
+        // Добавление в очередь
         addToQueueBtn.addEventListener('click', async () => {
             const name = nameInput.value.trim();
             if (name) {
@@ -251,7 +273,7 @@
             }
         });
 
-        
+        // Поддержка Enter
         nameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 addToQueueBtn.click();
@@ -259,5 +281,5 @@
         });
     </script>
 </body>
-
 </html>
+
