@@ -35,15 +35,25 @@
         .remove-btn:hover { box-shadow: 0 3px 10px rgba(245, 101, 101, 0.2); }
         .remove-btn:disabled { background: #ccc; cursor: not-allowed; }
         .status { text-align: center; margin: 10px 0; color: #805ad5; font-style: italic; }
+        .lang-selector { text-align: center; margin-bottom: 20px; }
+        .lang-selector select { padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 16px; }
         @media (max-width: 600px) { body { padding: 5px; } h1 { font-size: 2em; } .add-form { flex-direction: column; align-items: stretch; } #nameInput, .select-queue, button { width: 100%; } .queue-section { padding: 15px; margin: 10px 0; } .queue-list li { flex-direction: column; align-items: flex-start; gap: 10px; } .queue-item-name { margin-left: 0; } }
         @media (min-width: 601px) { .add-form { max-width: 500px; margin: 0 auto; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Очередь в классе</h1>
+        <h1 id="title">Очередь в классе</h1>
+        
+        <div class="lang-selector">
+            <select id="langSelect">
+                <option value="ru">Русский</option>
+                <option value="uk">Українська</option>
+            </select>
+        </div>
+        
         <div class="queue-section">
-            <h2>Добавить в очередь</h2>
+            <h2 id="addTitle">Добавить в очередь</h2>
             <div class="add-form">
                 <input type="text" id="nameInput" placeholder="Введите ваше имя" required>
                 <select id="queueSelect" class="select-queue">
@@ -93,6 +103,69 @@
         let toiletQueueRef = database.ref('toiletQueue');
         let boardQueueRef = database.ref('boardQueue');
 
+        // Тексты на двух языках
+        const translations = {
+            ru: {
+                title: 'Очередь в классе',
+                addTitle: 'Добавить в очередь',
+                namePlaceholder: 'Введите ваше имя',
+                toiletOption: 'В туалет',
+                boardOption: 'К доске',
+                addButton: 'Добавить',
+                toiletQueueTitle: 'Очередь в туалет',
+                boardQueueTitle: 'Очередь к доске',
+                removeButton: 'Убрать',
+                notYourEntry: 'Не ваш вход',
+                adding: 'Добавление...',
+                added: 'Добавлено!',
+                alreadyInQueue: 'Вы уже в этой очереди!',
+                error: 'Ошибка: '
+            },
+            uk: {
+                title: 'Черга в класі',
+                addTitle: 'Додати до черги',
+                namePlaceholder: 'Введіть ваше ім\'я',
+                toiletOption: 'До туалету',
+                boardOption: 'До дошки',
+                addButton: 'Додати',
+                toiletQueueTitle: 'Черга до туалету',
+                boardQueueTitle: 'Черга до дошки',
+                removeButton: 'Видалити',
+                notYourEntry: 'Не ваш запис',
+                adding: 'Додавання...',
+                added: 'Додано!',
+                alreadyInQueue: 'Ви вже в цій черзі!',
+                error: 'Помилка: '
+            }
+        };
+
+        let currentLang = localStorage.getItem('lang') || 'ru';
+
+        // Функция для смены языка
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            document.documentElement.lang = lang;
+            document.getElementById('title').textContent = translations[lang].title;
+            document.getElementById('addTitle').textContent = translations[lang].addTitle;
+            document.getElementById('nameInput').placeholder = translations[lang].namePlaceholder;
+            document.querySelector('#queueSelect option[value="toilet"]').textContent = translations[lang].toiletOption;
+            document.querySelector('#queueSelect option[value="board"]').textContent = translations[lang].boardOption;
+            document.getElementById('addToQueueBtn').textContent = translations[lang].addButton;
+            document.querySelector('#toiletQueueSection h2').textContent = translations[lang].toiletQueueTitle;
+            document.querySelector('#boardQueueSection h2').textContent = translations[lang].boardQueueTitle;
+            // Обновить кнопки в очередях (после обновления списка)
+        }
+
+        // Инициализация языка
+        setLanguage(currentLang);
+
+        // Смена языка
+        document.getElementById('langSelect').value = currentLang;
+        document.getElementById('langSelect').addEventListener('change', (e) => {
+            setLanguage(e.target.value);
+        });
+
         // Функция для проверки, есть ли запись от этого userId уже в очереди
         function hasUserInQueue(queueRef) {
             return new Promise((resolve) => {
@@ -120,12 +193,12 @@
                 li.innerHTML = `<span class="queue-item-number">${num}.</span> <span class="queue-item-name">${data.name}</span>`;
                 const btn = document.createElement('button');
                 btn.className = 'remove-btn';
-                btn.textContent = 'Убрать';
+                btn.textContent = translations[currentLang].removeButton;
                 if (data.userId === userId) {
                     btn.onclick = () => removeFromQueue(listElement.id, key);
                 } else {
                     btn.disabled = true;
-                    btn.title = 'Не ваш вход';
+                    btn.title = translations[currentLang].notYourEntry;
                 }
                 li.appendChild(btn);
                 li.style.animationDelay = `${(index - 1) * 0.1}s`;
@@ -158,20 +231,20 @@
                 const queueRef = selectedQueue === 'toilet' ? toiletQueueRef : boardQueueRef;
                 const hasEntry = await hasUserInQueue(queueRef);
                 if (hasEntry) {
-                    statusDiv.textContent = 'Вы уже в этой очереди!';
+                    statusDiv.textContent = translations[currentLang].alreadyInQueue;
                     setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     return;
                 }
                 addToQueueBtn.disabled = true;
-                statusDiv.textContent = 'Добавление...';
+                statusDiv.textContent = translations[currentLang].adding;
                 const entry = { name: name, userId: userId, timestamp: Date.now() };
                 queueRef.push(entry).then(() => {
-                    statusDiv.textContent = 'Добавлено!';
+                    statusDiv.textContent = translations[currentLang].added;
                     setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     nameInput.value = '';
                     nameInput.focus();
                 }).catch((error) => {
-                    statusDiv.textContent = 'Ошибка: ' + error.message;
+                    statusDiv.textContent = translations[currentLang].error + error.message;
                 }).finally(() => {
                     addToQueueBtn.disabled = false;
                 });
