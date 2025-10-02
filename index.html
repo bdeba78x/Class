@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Очередь в классе</title>
-    <!-- Firebase SDK через <script> теги (как в инструкции Firebase) -->
+    <!-- Firebase SDK через <script> теги -->
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
     <style>
@@ -244,10 +244,11 @@
     </div>
 
     <script>
-        // Твой Firebase config из инструкции (без analytics, так как не нужен)
+        // Твой Firebase config с добавленным databaseURL (из ошибки)
         const firebaseConfig = {
             apiKey: "AIzaSyAezFsKLHF2xUIqW2QZ4wRJtJ7vBaPy8TU",
             authDomain: "classqueue-39608.firebaseapp.com",
+            databaseURL: "https://classqueue-39608-default-rtdb.firebaseio.com/",
             projectId: "classqueue-39608",
             storageBucket: "classqueue-39608.firebasestorage.app",
             messagingSenderId: "777467342575",
