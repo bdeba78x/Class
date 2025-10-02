@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Очередь в классе</title>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -114,6 +116,11 @@
             transform: translateY(-1px);
             box-shadow: 0 3px 10px rgba(128, 90, 213, 0.2);
         }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
         .queue-list {
             list-style: none;
             padding: 0;
@@ -165,6 +172,12 @@
         .remove-btn:hover {
             box-shadow: 0 3px 10px rgba(245, 101, 101, 0.2);
         }
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            color: #805ad5;
+            font-style: italic;
+        }
         /* Responsive Design */
         @media (max-width: 600px) {
             body {
@@ -215,6 +228,7 @@
                 </select>
                 <button id="addToQueueBtn">Добавить</button>
             </div>
+            <div id="status" class="status"></div>
         </div>
 
         <div id="toiletQueueSection" class="queue-section">
@@ -229,69 +243,88 @@
     </div>
 
     <script>
-        // Загрузка очередей из localStorage
-        let toiletQueue = JSON.parse(localStorage.getItem('toiletQueue')) || [];
-        let boardQueue = JSON.parse(localStorage.getItem('boardQueue')) || [];
+        // Ваш Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyAezFsKLHF2xUIqW2QZ4wRJtJ7vBaPy8TU",
+            authDomain: "classqueue-39608.firebaseapp.com",
+            projectId: "classqueue-39608",
+            storageBucket: "classqueue-39608.firebasestorage.app",
+            messagingSenderId: "777467342575",
+            appId: "1:777467342575:web:1e51c25eeb9a640698351a",
+            measurementId: "G-GPSKYGND9C"
+        };
+
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
         const nameInput = document.getElementById('nameInput');
         const queueSelect = document.getElementById('queueSelect');
         const addToQueueBtn = document.getElementById('addToQueueBtn');
         const toiletQueueList = document.getElementById('toiletQueue');
         const boardQueueList = document.getElementById('boardQueue');
+        const statusDiv = document.getElementById('status');
+
+        let toiletQueueRef = database.ref('toiletQueue');
+        let boardQueueRef = database.ref('boardQueue');
 
         // Функция для обновления списка очереди
-        function updateQueueList(queue, listElement) {
+        function updateQueueList(queueSnapshot, listElement) {
             listElement.innerHTML = '';
-            queue.forEach((name, index) => {
+            queueSnapshot.forEach((childSnapshot, index) => {
+                const name = childSnapshot.val();
+                const key = childSnapshot.key;
                 const li = document.createElement('li');
                 li.style.animationDelay = `${index * 0.1}s`;
                 li.innerHTML = `
                     <span class="queue-item-number">${index + 1}.</span>
                     <span class="queue-item-name">${name}</span>
-                    <button class="remove-btn" onclick="removeFromQueue('${listElement.id}', ${index})">Убрать</button>
+                    <button class="remove-btn" onclick="removeFromQueue('${listElement.id}', '${key}')">Убрать</button>
                 `;
                 listElement.appendChild(li);
             });
-            saveQueues();
-        }
-
-        // Функция для сохранения в localStorage
-        function saveQueues() {
-            localStorage.setItem('toiletQueue', JSON.stringify(toiletQueue));
-            localStorage.setItem('boardQueue', JSON.stringify(boardQueue));
         }
 
         // Функция для удаления из очереди
-        window.removeFromQueue = function(listId, index) {
+        window.removeFromQueue = function(listId, key) {
             if (listId === 'toiletQueue') {
-                toiletQueue.splice(index, 1);
-                updateQueueList(toiletQueue, toiletQueueList);
+                toiletQueueRef.child(key).remove();
             } else if (listId === 'boardQueue') {
-                boardQueue.splice(index, 1);
-                updateQueueList(boardQueue, boardQueueList);
+                boardQueueRef.child(key).remove();
             }
         };
+
+        // Слушатели изменений в реальном времени
+        toiletQueueRef.on('value', (snapshot) => {
+            updateQueueList(snapshot, toiletQueueList);
+        });
+
+        boardQueueRef.on('value', (snapshot) => {
+            updateQueueList(snapshot, boardQueueList);
+        });
 
         // Добавление в очередь
         addToQueueBtn.addEventListener('click', () => {
             const name = nameInput.value.trim();
             if (name) {
+                addToQueueBtn.disabled = true;
+                statusDiv.textContent = 'Добавление...';
                 const selectedQueue = queueSelect.value;
-                if (selectedQueue === 'toilet') {
-                    toiletQueue.push(name);
-                    updateQueueList(toiletQueue, toiletQueueList);
-                } else {
-                    boardQueue.push(name);
-                    updateQueueList(boardQueue, boardQueueList);
-                }
-                nameInput.value = '';
-                nameInput.focus();
+                const queueRef = selectedQueue === 'toilet' ? toiletQueueRef : boardQueueRef;
+                queueRef.push(name).then(() => {
+                    statusDiv.textContent = 'Добавлено!';
+                    setTimeout(() => {
+                        statusDiv.textContent = '';
+                    }, 2000);
+                    nameInput.value = '';
+                    nameInput.focus();
+                }).catch((error) => {
+                    statusDiv.textContent = 'Ошибка: ' + error.message;
+                }).finally(() => {
+                    addToQueueBtn.disabled = false;
+                });
             }
         });
-
-        // Инициализация списков
-        updateQueueList(toiletQueue, toiletQueueList);
-        updateQueueList(boardQueue, boardQueueList);
 
         // Поддержка Enter
         nameInput.addEventListener('keypress', (e) => {
