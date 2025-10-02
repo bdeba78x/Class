@@ -93,7 +93,7 @@
         const boardQueueList = document.getElementById('boardQueue');
         const statusDiv = document.getElementById('status');
 
-        // Уникальный ID пользователя для localStorage
+       
         let userId = localStorage.getItem('userId');
         if (!userId) {
             userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -103,7 +103,7 @@
         let toiletQueueRef = database.ref('toiletQueue');
         let boardQueueRef = database.ref('boardQueue');
 
-        // Тексты на двух языках
+       
         const translations = {
             ru: {
                 title: 'Очередь в классе',
@@ -141,7 +141,7 @@
 
         let currentLang = localStorage.getItem('lang') || 'ru';
 
-        // Функция для смены языка
+       
         function setLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('lang', lang);
@@ -154,19 +154,19 @@
             document.getElementById('addToQueueBtn').textContent = translations[lang].addButton;
             document.querySelector('#toiletQueueSection h2').textContent = translations[lang].toiletQueueTitle;
             document.querySelector('#boardQueueSection h2').textContent = translations[lang].boardQueueTitle;
-            // Обновить кнопки в очередях (после обновления списка)
+            
         }
 
-        // Инициализация языка
+        
         setLanguage(currentLang);
 
-        // Смена языка
+        
         document.getElementById('langSelect').value = currentLang;
         document.getElementById('langSelect').addEventListener('change', (e) => {
             setLanguage(e.target.value);
         });
 
-        // Функция для проверки, есть ли запись от этого userId уже в очереди
+        
         function hasUserInQueue(queueRef) {
             return new Promise((resolve) => {
                 queueRef.once('value', (snapshot) => {
@@ -181,14 +181,14 @@
             });
         }
 
-        // Функция для обновления списка очереди
+        
         function updateQueueList(queueSnapshot, listElement) {
             listElement.innerHTML = '';
             let index = 0;
             queueSnapshot.forEach((childSnapshot) => {
                 const data = childSnapshot.val();
                 const key = childSnapshot.key;
-                const num = ++index;  // Правильная нумерация от 1
+                const num = ++index;  
                 const li = document.createElement('li');
                 li.innerHTML = `<span class="queue-item-number">${num}.</span> <span class="queue-item-name">${data.name}</span>`;
                 const btn = document.createElement('button');
@@ -206,7 +206,7 @@
             });
         }
 
-        // Функция для удаления из очереди
+        
         window.removeFromQueue = function(listId, key) {
             if (listId === 'toiletQueue') {
                 toiletQueueRef.child(key).remove();
@@ -215,7 +215,7 @@
             }
         };
 
-        // Слушатели изменений в реальном времени
+        
         toiletQueueRef.on('value', (snapshot) => {
             updateQueueList(snapshot, toiletQueueList);
         });
@@ -223,7 +223,7 @@
             updateQueueList(snapshot, boardQueueList);
         });
 
-        // Добавление в очередь
+        
         addToQueueBtn.addEventListener('click', async () => {
             const name = nameInput.value.trim();
             if (name) {
@@ -251,7 +251,7 @@
             }
         });
 
-        // Поддержка Enter
+        
         nameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 addToQueueBtn.click();
@@ -259,4 +259,5 @@
         });
     </script>
 </body>
+
 </html>
