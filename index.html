@@ -93,17 +93,17 @@
         let toiletQueueRef = database.ref('toiletQueue');
         let boardQueueRef = database.ref('boardQueue');
 
-        // Функция для проверки, есть ли имя уже в очереди
-        function hasDuplicateName(queueRef, name) {
+        // Функция для проверки, есть ли запись от этого userId уже в очереди
+        function hasUserInQueue(queueRef) {
             return new Promise((resolve) => {
                 queueRef.once('value', (snapshot) => {
-                    let hasDup = false;
+                    let hasEntry = false;
                     snapshot.forEach((child) => {
-                        if (child.val().name === name) {
-                            hasDup = true;
+                        if (child.val().userId === userId) {
+                            hasEntry = true;
                         }
                     });
-                    resolve(hasDup);
+                    resolve(hasEntry);
                 });
             });
         }
@@ -156,8 +156,8 @@
             if (name) {
                 const selectedQueue = queueSelect.value;
                 const queueRef = selectedQueue === 'toilet' ? toiletQueueRef : boardQueueRef;
-                const hasDup = await hasDuplicateName(queueRef, name);
-                if (hasDup) {
+                const hasEntry = await hasUserInQueue(queueRef);
+                if (hasEntry) {
                     statusDiv.textContent = 'Вы уже в этой очереди!';
                     setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     return;
