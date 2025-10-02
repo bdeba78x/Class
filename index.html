@@ -13,25 +13,11 @@
             max-width: 100%; 
             margin: 0; 
             padding: 10px; 
-            background-image: url('hgfghjkl;.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh; 
             color: #4a5568; 
-            position: relative;
         }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(245, 247, 250, 0.8) 0%, rgba(195, 207, 226, 0.8) 100%);
-            z-index: -1;
-        }
-        .container { max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
+        .container { max-width: 800px; margin: 0 auto; }
         h1 { text-align: center; color: #805ad5; margin-bottom: 20px; font-size: 2.5em; font-weight: 300; }
         .queue-section { background: rgba(255, 255, 255, 0.95); margin: 15px 0; padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: all 0.3s ease; border: 1px solid rgba(128, 90, 213, 0.1); }
         .queue-section:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
@@ -81,6 +67,7 @@
                 <select id="queueSelect" class="select-queue">
                     <option value="toilet">В туалет</option>
                     <option value="board">К доске</option>
+                    <option value="admin">Админка</option>
                 </select>
                 <button id="addToQueueBtn">Добавить</button>
             </div>
@@ -125,6 +112,10 @@
         let toiletQueueRef = database.ref('toiletQueue');
         let boardQueueRef = database.ref('boardQueue');
 
+        // Режим админа
+        let isAdmin = localStorage.getItem('isAdmin') === 'true';
+        const ADMIN_PASSWORD = 'hssoio####';
+
         // Тексты на двух языках
         const translations = {
             ru: {
@@ -133,6 +124,7 @@
                 namePlaceholder: 'Введите ваше имя',
                 toiletOption: 'В туалет',
                 boardOption: 'К доске',
+                adminOption: 'Админка',
                 addButton: 'Добавить',
                 toiletQueueTitle: 'Очередь в туалет',
                 boardQueueTitle: 'Очередь к доске',
@@ -140,6 +132,8 @@
                 notYourEntry: 'Не ваш вход',
                 adding: 'Добавление...',
                 added: 'Добавлено!',
+                adminActivated: 'Админ режим включён!',
+                wrongPassword: 'Неверный пароль!',
                 alreadyInQueue: 'Вы уже в этой очереди!',
                 error: 'Ошибка: '
             },
@@ -149,6 +143,7 @@
                 namePlaceholder: 'Введіть ваше ім\'я',
                 toiletOption: 'До туалету',
                 boardOption: 'До дошки',
+                adminOption: 'Адмінка',
                 addButton: 'Додати',
                 toiletQueueTitle: 'Черга до туалету',
                 boardQueueTitle: 'Черга до дошки',
@@ -156,6 +151,8 @@
                 notYourEntry: 'Не ваш запис',
                 adding: 'Додавання...',
                 added: 'Додано!',
+                adminActivated: 'Режим адміна увімкнено!',
+                wrongPassword: 'Невірний пароль!',
                 alreadyInQueue: 'Ви вже в цій черзі!',
                 error: 'Помилка: '
             }
@@ -173,6 +170,7 @@
             document.getElementById('nameInput').placeholder = translations[lang].namePlaceholder;
             document.querySelector('#queueSelect option[value="toilet"]').textContent = translations[lang].toiletOption;
             document.querySelector('#queueSelect option[value="board"]').textContent = translations[lang].boardOption;
+            document.querySelector('#queueSelect option[value="admin"]').textContent = translations[lang].adminOption;
             document.getElementById('addToQueueBtn').textContent = translations[lang].addButton;
             document.querySelector('#toiletQueueSection h2').textContent = translations[lang].toiletQueueTitle;
             document.querySelector('#boardQueueSection h2').textContent = translations[lang].boardQueueTitle;
@@ -216,7 +214,7 @@
                 const btn = document.createElement('button');
                 btn.className = 'remove-btn';
                 btn.textContent = translations[currentLang].removeButton;
-                if (data.userId === userId) {
+                if (isAdmin || data.userId === userId) {
                     btn.onclick = () => removeFromQueue(listElement.id, key);
                 } else {
                     btn.disabled = true;
@@ -250,9 +248,22 @@
             const name = nameInput.value.trim();
             if (name) {
                 const selectedQueue = queueSelect.value;
+                if (selectedQueue === 'admin') {
+                    if (name === ADMIN_PASSWORD) {
+                        isAdmin = true;
+                        localStorage.setItem('isAdmin', 'true');
+                        statusDiv.textContent = translations[currentLang].adminActivated;
+                        setTimeout(() => { statusDiv.textContent = ''; }, 2000);
+                    } else {
+                        statusDiv.textContent = translations[currentLang].wrongPassword;
+                        setTimeout(() => { statusDiv.textContent = ''; }, 2000);
+                    }
+                    nameInput.value = '';
+                    return;
+                }
                 const queueRef = selectedQueue === 'toilet' ? toiletQueueRef : boardQueueRef;
                 const hasEntry = await hasUserInQueue(queueRef);
-                if (hasEntry) {
+                if (hasEntry && !isAdmin) {  // Админу можно дублировать
                     statusDiv.textContent = translations[currentLang].alreadyInQueue;
                     setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     return;
@@ -282,4 +293,3 @@
     </script>
 </body>
 </html>
-
