@@ -6,62 +6,66 @@
     <title>Очередь в классе</title>
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             max-width: 100%; 
             margin: 0; 
             padding: 10px; 
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh; 
             color: #4a5568; 
+            line-height: 1.6;
         }
         .container { max-width: 800px; margin: 0 auto; }
-        h1 { text-align: center; color: #805ad5; margin-bottom: 20px; font-size: 2.5em; font-weight: 300; }
-        .queue-section { background: rgba(255, 255, 255, 0.95); margin: 15px 0; padding: 20px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: all 0.3s ease; border: 1px solid rgba(128, 90, 213, 0.1); }
-        .queue-section:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .queue-section h2 { color: #805ad5; margin-bottom: 15px; font-size: 1.4em; text-align: center; font-weight: 400; }
+        h1 { text-align: center; color: #805ad5; margin-bottom: 20px; font-size: 2.8em; font-weight: 300; text-shadow: 0 2px 4px rgba(128, 90, 213, 0.1); letter-spacing: -0.02em; }
+        .queue-section { background: rgba(255, 255, 255, 0.95); margin: 15px 0; padding: 24px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); transition: all 0.2s ease; border: 1px solid rgba(128, 90, 213, 0.1); backdrop-filter: blur(10px); }
+        .queue-section:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+        .queue-section h2 { color: #805ad5; margin-bottom: 18px; font-size: 1.6em; text-align: center; font-weight: 500; letter-spacing: -0.01em; text-shadow: 0 1px 2px rgba(128, 90, 213, 0.1); cursor: pointer; user-select: none; transition: color 0.2s ease; }
+        .queue-section h2:hover { color: #6b46c1; }
         #toiletQueueSection h2::before { content: '🚽 '; }
         #boardQueueSection h2::before { content: '📋 '; }
-        .add-form { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; }
-        #nameInput { flex: 1; min-width: 150px; padding: 12px 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; transition: all 0.3s ease; background: #fafafa; }
-        #nameInput:focus { outline: none; border-color: #805ad5; box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1); background: white; }
-        .select-queue { padding: 12px 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; background: #fafafa; transition: all 0.3s ease; }
-        .select-queue:focus { outline: none; border-color: #805ad5; box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1); }
-        button { padding: 12px 20px; background: linear-gradient(135deg, #805ad5 0%, #9f7aea 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.3s ease; min-width: 100px; }
-        button:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(128, 90, 213, 0.2); }
+        .queue-list { 
+            max-height: 0; 
+            overflow: hidden; 
+            transition: max-height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease; /* Быстрее, 0.3s */
+            opacity: 0;
+        }
+        .queue-list.show { 
+            max-height: 800px; 
+            opacity: 1;
+        }
+        .add-form { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; align-items: center; }
+        #nameInput { flex: 1; min-width: 150px; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); background: #fafafa; font-weight: 400; }
+        #nameInput:focus { outline: none; border-color: #805ad5; box-shadow: 0 0 0 4px rgba(128, 90, 213, 0.1); background: white; transform: scale(1.02); }
+        .select-queue { padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; background: #fafafa; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 400; }
+        .select-queue:focus { outline: none; border-color: #805ad5; box-shadow: 0 0 0 4px rgba(128, 90, 213, 0.1); transform: scale(1.02); }
+        button { padding: 14px 24px; background: linear-gradient(135deg, #805ad5 0%, #9f7aea 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); min-width: 100px; letter-spacing: 0.5px; text-transform: uppercase; font-size: 14px; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(128, 90, 213, 0.3); }
         button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
         .queue-list { list-style: none; padding: 0; }
-        .queue-list li { background: #f7fafc; margin: 8px 0; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.5s ease forwards; opacity: 0; transform: scale(0.95); border-left: 3px solid #805ad5; transition: all 0.3s ease; }
-        .queue-list li:nth-child(even) { background: #edf2f7; }
-        .queue-list li:hover { transform: scale(1.01); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .queue-list li { background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); margin: 10px 0; padding: 18px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; opacity: 0; transform: scale(0.98); border-left: 4px solid #805ad5; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 10px rgba(0,0,0,0.05); font-weight: 400; }
+        .queue-list li:nth-child(even) { background: linear-gradient(135deg, #edf2f7 0%, #f7fafc 100%); }
+        .queue-list li:hover { transform: scale(1.02); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         @keyframes fadeIn { to { opacity: 1; transform: scale(1); } }
-        .queue-item-number { font-weight: 600; color: #805ad5; font-size: 1.1em; }
-        .queue-item-name { flex: 1; margin-left: 10px; }
-        .remove-btn { background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); color: white; padding: 8px 12px; font-size: 14px; min-width: auto; border-radius: 6px; }
-        .remove-btn:hover { box-shadow: 0 3px 10px rgba(245, 101, 101, 0.2); }
-        .remove-btn:disabled { background: #ccc; cursor: not-allowed; }
-        .status { text-align: center; margin: 10px 0; color: #805ad5; font-style: italic; }
-        .lang-selector { text-align: center; margin-bottom: 20px; }
-        .lang-selector select { padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 16px; }
-        @media (max-width: 600px) { body { padding: 5px; } h1 { font-size: 2em; } .add-form { flex-direction: column; align-items: stretch; } #nameInput, .select-queue, button { width: 100%; } .queue-section { padding: 15px; margin: 10px 0; } .queue-list li { flex-direction: column; align-items: flex-start; gap: 10px; } .queue-item-name { margin-left: 0; } }
+        .queue-item-number { font-weight: 600; color: #805ad5; font-size: 1.2em; min-width: 30px; }
+        .queue-item-name { flex: 1; margin-left: 12px; font-size: 1.1em; }
+        .remove-btn { background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); color: white; padding: 10px 14px; font-size: 14px; min-width: auto; border-radius: 8px; font-weight: 500; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .remove-btn:hover { box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3); transform: translateY(-1px); }
+        .remove-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .status { text-align: center; margin: 10px 0; color: #805ad5; font-style: italic; font-weight: 500; font-size: 1.1em; transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        @media (max-width: 600px) { body { padding: 5px; } h1 { font-size: 2.2em; } .add-form { flex-direction: column; align-items: stretch; } #nameInput, .select-queue, button { width: 100%; } .queue-section { padding: 18px; margin: 10px 0; } .queue-list li { flex-direction: column; align-items: flex-start; gap: 12px; } .queue-item-name { margin-left: 0; } .queue-list.show { max-height: 1000px; } /* Ещё больше для мобильных */ }
         @media (min-width: 601px) { .add-form { max-width: 500px; margin: 0 auto; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 id="title">Очередь в классе</h1>
-        
-        <div class="lang-selector">
-            <select id="langSelect">
-                <option value="ru">Русский</option>
-                <option value="uk">Українська</option>
-            </select>
-        </div>
+        <h1>Очередь в классе</h1>
         
         <div class="queue-section">
-            <h2 id="addTitle">Добавить в очередь</h2>
+            <h2>Добавить в очередь</h2>
             <div class="add-form">
                 <input type="text" id="nameInput" placeholder="Введите ваше имя" required>
                 <select id="queueSelect" class="select-queue">
@@ -74,15 +78,21 @@
             <div id="status" class="status"></div>
         </div>
         <div id="toiletQueueSection" class="queue-section">
-            <h2>Очередь в туалет</h2>
+            <h2 onclick="toggleQueue('toiletQueue')">Очередь в туалет</h2>
             <ul id="toiletQueue" class="queue-list"></ul>
         </div>
         <div id="boardQueueSection" class="queue-section">
-            <h2>Очередь к доске</h2>
+            <h2 onclick="toggleQueue('boardQueue')">Очередь к доске</h2>
             <ul id="boardQueue" class="queue-list"></ul>
         </div>
     </div>
     <script>
+        // Глобальная функция toggleQueue
+        function toggleQueue(queueId) {
+            const list = document.getElementById(queueId);
+            list.classList.toggle('show');
+        }
+
         const firebaseConfig = {
             apiKey: "AIzaSyAezFsKLHF2xUIqW2QZ4wRJtJ7vBaPy8TU",
             authDomain: "classqueue-39608.firebaseapp.com",
@@ -102,6 +112,10 @@
         const boardQueueList = document.getElementById('boardQueue');
         const statusDiv = document.getElementById('status');
 
+        // Звуки (base64 для избежания проблем)
+        const addSound = new Audio('data:audio/wav;base64,UklGRl9vAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaNAAAD//wIAAP////8AAP////8='); // Короткий beep
+        const removeSound = new Audio('data:audio/wav;base64,UklGRl9vAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaNAAAD//wIAAP////8AAP////8='); // Тот же beep для простоты
+
         // Уникальный ID пользователя для localStorage
         let userId = localStorage.getItem('userId');
         if (!userId) {
@@ -115,76 +129,6 @@
         // Режим админа
         let isAdmin = localStorage.getItem('isAdmin') === 'true';
         const ADMIN_PASSWORD = 'hssoio####';
-
-        // Тексты на двух языках
-        const translations = {
-            ru: {
-                title: 'Очередь в классе',
-                addTitle: 'Добавить в очередь',
-                namePlaceholder: 'Введите ваше имя',
-                toiletOption: 'В туалет',
-                boardOption: 'К доске',
-                adminOption: 'Админка',
-                addButton: 'Добавить',
-                toiletQueueTitle: 'Очередь в туалет',
-                boardQueueTitle: 'Очередь к доске',
-                removeButton: 'Убрать',
-                notYourEntry: 'Не ваш вход',
-                adding: 'Добавление...',
-                added: 'Добавлено!',
-                adminActivated: 'Админ режим включён!',
-                wrongPassword: 'Неверный пароль!',
-                alreadyInQueue: 'Вы уже в этой очереди!',
-                error: 'Ошибка: '
-            },
-            uk: {
-                title: 'Черга в класі',
-                addTitle: 'Додати до черги',
-                namePlaceholder: 'Введіть ваше ім\'я',
-                toiletOption: 'До туалету',
-                boardOption: 'До дошки',
-                adminOption: 'Адмінка',
-                addButton: 'Додати',
-                toiletQueueTitle: 'Черга до туалету',
-                boardQueueTitle: 'Черга до дошки',
-                removeButton: 'Видалити',
-                notYourEntry: 'Не ваш запис',
-                adding: 'Додавання...',
-                added: 'Додано!',
-                adminActivated: 'Режим адміна увімкнено!',
-                wrongPassword: 'Невірний пароль!',
-                alreadyInQueue: 'Ви вже в цій черзі!',
-                error: 'Помилка: '
-            }
-        };
-
-        let currentLang = localStorage.getItem('lang') || 'ru';
-
-        // Функция для смены языка
-        function setLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('lang', lang);
-            document.documentElement.lang = lang;
-            document.getElementById('title').textContent = translations[lang].title;
-            document.getElementById('addTitle').textContent = translations[lang].addTitle;
-            document.getElementById('nameInput').placeholder = translations[lang].namePlaceholder;
-            document.querySelector('#queueSelect option[value="toilet"]').textContent = translations[lang].toiletOption;
-            document.querySelector('#queueSelect option[value="board"]').textContent = translations[lang].boardOption;
-            document.querySelector('#queueSelect option[value="admin"]').textContent = translations[lang].adminOption;
-            document.getElementById('addToQueueBtn').textContent = translations[lang].addButton;
-            document.querySelector('#toiletQueueSection h2').textContent = translations[lang].toiletQueueTitle;
-            document.querySelector('#boardQueueSection h2').textContent = translations[lang].boardQueueTitle;
-            // Обновить кнопки в очередях (после обновления списка)
-        }
-
-        // Инициализация языка
-        setLanguage(currentLang);
-
-        // Смена языка
-        document.getElementById('langSelect').value = currentLang;
-        document.getElementById('langSelect').addEventListener('change', (e) => {
-            setLanguage(e.target.value);
-        });
 
         // Функция для проверки, есть ли запись от этого userId уже в очереди
         function hasUserInQueue(queueRef) {
@@ -213,15 +157,18 @@
                 li.innerHTML = `<span class="queue-item-number">${num}.</span> <span class="queue-item-name">${data.name}</span>`;
                 const btn = document.createElement('button');
                 btn.className = 'remove-btn';
-                btn.textContent = translations[currentLang].removeButton;
+                btn.textContent = 'Убрать';
                 if (isAdmin || data.userId === userId) {
-                    btn.onclick = () => removeFromQueue(listElement.id, key);
+                    btn.onclick = () => {
+                        removeSound.play().catch(() => {}); // Проигрываем звук удаления
+                        removeFromQueue(listElement.id, key);
+                    };
                 } else {
                     btn.disabled = true;
-                    btn.title = translations[currentLang].notYourEntry;
+                    btn.title = 'Не ваш вход';
                 }
                 li.appendChild(btn);
-                li.style.animationDelay = `${(index - 1) * 0.1}s`;
+                li.style.animationDelay = `${(index - 1) * 0.12}s`;
                 listElement.appendChild(li);
             });
         }
@@ -252,10 +199,11 @@
                     if (name === ADMIN_PASSWORD) {
                         isAdmin = true;
                         localStorage.setItem('isAdmin', 'true');
-                        statusDiv.textContent = translations[currentLang].adminActivated;
+                        statusDiv.textContent = 'Админ режим включён!';
+                        addSound.play().catch(() => {}); // Звук при активации админки
                         setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     } else {
-                        statusDiv.textContent = translations[currentLang].wrongPassword;
+                        statusDiv.textContent = 'Неверный пароль!';
                         setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     }
                     nameInput.value = '';
@@ -264,20 +212,21 @@
                 const queueRef = selectedQueue === 'toilet' ? toiletQueueRef : boardQueueRef;
                 const hasEntry = await hasUserInQueue(queueRef);
                 if (hasEntry && !isAdmin) {  // Админу можно дублировать
-                    statusDiv.textContent = translations[currentLang].alreadyInQueue;
+                    statusDiv.textContent = 'Вы уже в этой очереди!';
                     setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     return;
                 }
                 addToQueueBtn.disabled = true;
-                statusDiv.textContent = translations[currentLang].adding;
+                statusDiv.textContent = 'Добавление...';
                 const entry = { name: name, userId: userId, timestamp: Date.now() };
                 queueRef.push(entry).then(() => {
-                    statusDiv.textContent = translations[currentLang].added;
+                    statusDiv.textContent = 'Добавлено!';
+                    addSound.play().catch(() => {}); // Звук при добавлении
                     setTimeout(() => { statusDiv.textContent = ''; }, 2000);
                     nameInput.value = '';
                     nameInput.focus();
                 }).catch((error) => {
-                    statusDiv.textContent = translations[currentLang].error + error.message;
+                    statusDiv.textContent = 'Ошибка: ' + error.message;
                 }).finally(() => {
                     addToQueueBtn.disabled = false;
                 });
